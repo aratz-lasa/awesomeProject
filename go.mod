@@ -20,6 +20,7 @@ require (
 	github.com/coreos/go-semver v0.3.0 // indirect
 	github.com/davidlazar/go-crypto v0.0.0-20200604182044-b73af7476f6c // indirect
 	github.com/deepmap/oapi-codegen v1.8.2 // indirect
+	github.com/dmichael/go-multicast v0.0.0-20191021152323-097bfd85720a
 	github.com/flynn/noise v1.0.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect

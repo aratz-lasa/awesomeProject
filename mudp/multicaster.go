@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net"
+	"strings"
 )
 
 const (
@@ -12,6 +13,7 @@ const (
 type multicaster struct {
 	addr  *net.UDPAddr
 	close chan chan error
+	conn  *net.UDPConn
 }
 
 func NewMulticaster(addr string) (mc multicaster, err error) {
@@ -22,12 +24,15 @@ func NewMulticaster(addr string) (mc multicaster, err error) {
 	return multicaster{addr: udpAddr, close: make(chan chan error)}, nil
 }
 
-func (mc *multicaster) Listen(handler func(*net.UDPAddr, int, []byte)) {
+func (mc *multicaster) Listen(ready chan bool, handler func(*net.UDPAddr, int, []byte)) {
 	conn, err := net.ListenMulticastUDP("udp4", nil, mc.addr)
 	if err != nil {
 		log.Fatal(err)
 		return
 	}
+
+	mc.conn = conn
+	ready <- true
 
 	conn.SetReadBuffer(maxDatagramSize)
 
@@ -35,9 +40,11 @@ func (mc *multicaster) Listen(handler func(*net.UDPAddr, int, []byte)) {
 		buffer := make([]byte, maxDatagramSize)
 		numBytes, src, err := conn.ReadFromUDP(buffer)
 		if err != nil {
+			if strings.Contains(err.Error(), "use of closed network connection") {
+				return
+			}
 			log.Fatal("ReadFromUDP failed:", err)
 		}
-
 		handler(src, numBytes, buffer)
 	}
 }
@@ -48,4 +55,8 @@ func (mc *multicaster) Multicast(data []byte) (int, error) {
 		return 0, err
 	}
 	return conn.Write(data)
+}
+
+func (mc *multicaster) Close() {
+	mc.conn.Close()
 }
